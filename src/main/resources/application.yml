@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: claudeping
+
+server:
+  port: 8080
+
+# 텔레그램 봇 설정
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN:YOUR_BOT_TOKEN_HERE}
+  chat:
+    id: ${TELEGRAM_CHAT_ID:0}  # 본인의 텔레그램 Chat ID
+
+# 승인 요청 타임아웃 (초)
+approval:
+  timeout:
+    seconds: 300  # 5분
+
+logging:
+  level:
+    root: INFO
+    com.example.claudebridge: DEBUG

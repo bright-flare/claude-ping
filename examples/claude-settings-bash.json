@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/permission-request-hook.sh",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

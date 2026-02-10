@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  claudeping:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claudeping
+    ports:
+      - "8080:8080"
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/hook/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # 로그 영속화 (선택사항)
+      - ./logs:/app/logs
+    networks:
+      - claudeping-network
+
+networks:
+  claudeping-network:
+    driver: bridge
