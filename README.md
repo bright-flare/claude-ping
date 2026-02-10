@@ -41,7 +41,7 @@ curl -fsSL https://raw.githubusercontent.com/brightflare/claudeping/main/quick-i
 
 ```bash
 # 1. 프로젝트 클론
-git clone https://github.com/brightflare/claudeping.git
+git clone https://github.com/bright-flare/claude-ping.git
 cd claudeping
 
 # 2. 자동 설치 실행

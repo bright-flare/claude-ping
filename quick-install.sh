@@ -5,7 +5,7 @@
 
 set -e
 
-REPO_URL="https://github.com/brightflare/claudeping.git"
+REPO_URL="https://github.com/bright-flare/claude-ping.git"
 INSTALL_DIR="$HOME/.claudeping"
 
 echo "🚀 ClaudePing 빠른 설치를 시작합니다..."
