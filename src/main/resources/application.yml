@@ -9,6 +9,7 @@ server:
 telegram:
   bot:
     token: ${TELEGRAM_BOT_TOKEN:YOUR_BOT_TOKEN_HERE}
+    username: ${TELEGRAM_BOT_USERNAME:YOUR_BOT_USERNAME_HERE}
   chat:
     id: ${TELEGRAM_CHAT_ID:0}  # 본인의 텔레그램 Chat ID
 

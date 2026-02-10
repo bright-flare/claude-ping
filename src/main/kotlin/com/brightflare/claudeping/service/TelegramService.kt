@@ -2,97 +2,93 @@ package com.brightflare.claudeping.service
 
 import com.brightflare.claudeping.model.ApprovalRequest
 import com.brightflare.claudeping.model.ApprovalResponse
-import com.github.kotlintelegrambot.bot
-import com.github.kotlintelegrambot.dispatch
-import com.github.kotlintelegrambot.dispatcher.callbackQuery
-import com.github.kotlintelegrambot.entities.ChatId
-import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
-import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
-import javax.annotation.PostConstruct
+import org.springframework.stereotype.Component
+import org.telegram.telegrambots.bots.TelegramLongPollingBot
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 
 private val logger = KotlinLogging.logger {}
 
 /**
  * 텔레그램 봇 서비스
  */
-@Service
+@Component
 class TelegramService(
-    @Value("\${telegram.bot.token}") private val botToken: String,
+    @Value("\${telegram.bot.token}") botToken: String,
+    @Value("\${telegram.bot.username}") private val botUsername: String,
     @Value("\${telegram.chat.id}") private val chatId: Long,
     private val approvalService: ApprovalService
-) {
+) : TelegramLongPollingBot(botToken) {
 
-    private val bot = bot {
-        token = botToken
+    override fun getBotUsername(): String = botUsername
 
-        dispatch {
-            callbackQuery {
-                val data = callbackQuery.data
-                val messageId = callbackQuery.message?.messageId
+    override fun onUpdateReceived(update: Update) {
+        if (!update.hasCallbackQuery()) return
 
-                logger.info { "Received callback: $data" }
+        val callbackQuery = update.callbackQuery
+        val data = callbackQuery.data
+        val callbackMessage = callbackQuery.message
+        val messageId = callbackMessage.messageId
+        val originalText = (callbackMessage as? org.telegram.telegrambots.meta.api.objects.Message)?.text ?: ""
 
-                // 콜백 데이터 파싱: "approve:request-id" or "reject:request-id"
-                val parts = data.split(":")
-                if (parts.size == 2) {
-                    val action = parts[0]
-                    val requestId = parts[1]
+        logger.info { "Received callback: $data" }
 
-                    val approved = action == "approve"
-                    val response = ApprovalResponse(
-                        approved = approved,
-                        message = if (approved) "승인되었습니다" else "거부되었습니다"
-                    )
+        // 콜백 데이터 파싱: "approve:request-id" or "reject:request-id"
+        val parts = data.split(":")
+        if (parts.size == 2) {
+            val action = parts[0]
+            val requestId = parts[1]
 
-                    approvalService.respondToRequest(requestId, response)
+            val approved = action == "approve"
+            val response = ApprovalResponse(
+                approved = approved,
+                message = if (approved) "승인되었습니다" else "거부되었습니다"
+            )
 
-                    // 메시지 업데이트
-                    bot.editMessageText(
-                        chatId = ChatId.fromId(chatId),
-                        messageId = messageId!!,
-                        text = """
-                            ✅ 응답 완료
+            approvalService.respondToRequest(requestId, response)
 
-                            ${callbackQuery.message?.text}
+            // 메시지 업데이트
+            execute(EditMessageText.builder()
+                .chatId(chatId.toString())
+                .messageId(messageId)
+                .text("""
+                    ✅ 응답 완료
 
-                            👉 결과: ${if (approved) "승인" else "거부"}
-                        """.trimIndent()
-                    )
+                    $originalText
 
-                    bot.answerCallbackQuery(
-                        callbackQuery.id,
-                        text = if (approved) "✅ 승인되었습니다" else "❌ 거부되었습니다"
-                    )
-                }
-            }
+                    👉 결과: ${if (approved) "승인" else "거부"}
+                """.trimIndent())
+                .build())
+
+            execute(AnswerCallbackQuery.builder()
+                .callbackQueryId(callbackQuery.id)
+                .text(if (approved) "✅ 승인되었습니다" else "❌ 거부되었습니다")
+                .build())
         }
-    }
-
-    @PostConstruct
-    fun start() {
-        logger.info { "Starting Telegram bot..." }
-        bot.startPolling()
     }
 
     /**
      * 승인 요청을 텔레그램으로 전송
      */
-    suspend fun sendApprovalRequest(request: ApprovalRequest) {
-        val keyboard = InlineKeyboardMarkup.create(
-            listOf(
-                InlineKeyboardButton.CallbackData(
-                    text = "✅ 승인",
-                    callbackData = "approve:${request.id}"
-                ),
-                InlineKeyboardButton.CallbackData(
-                    text = "❌ 거부",
-                    callbackData = "reject:${request.id}"
-                )
-            )
-        )
+    fun sendApprovalRequest(request: ApprovalRequest) {
+        val keyboard = InlineKeyboardMarkup.builder()
+            .keyboardRow(listOf(
+                InlineKeyboardButton.builder()
+                    .text("✅ 승인")
+                    .callbackData("approve:${request.id}")
+                    .build(),
+                InlineKeyboardButton.builder()
+                    .text("❌ 거부")
+                    .callbackData("reject:${request.id}")
+                    .build()
+            ))
+            .build()
 
         val message = """
             🤖 Claude 승인 요청
@@ -106,27 +102,20 @@ class TelegramService(
             응답을 선택해주세요:
         """.trimIndent()
 
-        val result = bot.sendMessage(
-            chatId = ChatId.fromId(chatId),
-            text = message,
-            replyMarkup = keyboard
-        )
-
-        if (result.isError) {
-            logger.error { "Failed to send message: ${result.errorBody}" }
-            throw RuntimeException("Failed to send Telegram message")
-        } else {
-            logger.info { "Approval request sent: ${request.id}" }
-        }
+        execute(SendMessage.builder()
+            .chatId(chatId.toString())
+            .text(message)
+            .replyMarkup(keyboard)
+            .build())
     }
 
     /**
      * 일반 메시지 전송
      */
     fun sendMessage(message: String) {
-        bot.sendMessage(
-            chatId = ChatId.fromId(chatId),
-            text = message
-        )
+        execute(SendMessage.builder()
+            .chatId(chatId.toString())
+            .text(message)
+            .build())
     }
 }
