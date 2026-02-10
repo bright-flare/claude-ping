@@ -258,9 +258,9 @@ Claude Code는 강력하지만, 터미널 앞에 있지 않으면 권한 요청�
 
 ## 📞 지원
 
-- 이슈: [GitHub Issues](https://github.com/brightflare/claudeping/issues)
-- 문의: [GitHub Discussions](https://github.com/brightflare/claudeping/discussions)
+- 이슈: [GitHub Issues](https://github.com/bright-flare/claudeping/issues)
+- 문의: [GitHub Discussions](https://github.com/bright-flare/claudeping/discussions)
 
 ---
 
-Made with ❤️ by [brightflare](https://github.com/brightflare)
+Made with ❤️ by [bright-flare](https://github.com/bright-flare)
