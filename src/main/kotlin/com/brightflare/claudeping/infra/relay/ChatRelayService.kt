@@ -1,4 +1,4 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.infra.relay
 
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value

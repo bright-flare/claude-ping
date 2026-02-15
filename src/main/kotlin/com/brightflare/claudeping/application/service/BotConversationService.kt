@@ -1,5 +1,6 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.application.service
 
+import com.brightflare.claudeping.infra.relay.ChatRelayService
 import org.springframework.stereotype.Service
 
 /**

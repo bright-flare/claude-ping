@@ -1,7 +1,11 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.infra.telegram
 
-import com.brightflare.claudeping.model.ApprovalRequest
-import com.brightflare.claudeping.model.ApprovalResponse
+import com.brightflare.claudeping.application.port.ApprovalChannel
+import com.brightflare.claudeping.application.service.ApprovalService
+import com.brightflare.claudeping.application.service.BotConversationService
+import com.brightflare.claudeping.application.service.IncomingMessageContext
+import com.brightflare.claudeping.domain.model.ApprovalRequest
+import com.brightflare.claudeping.domain.model.ApprovalResponse
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component

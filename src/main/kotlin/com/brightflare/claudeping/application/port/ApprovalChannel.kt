@@ -1,6 +1,6 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.application.port
 
-import com.brightflare.claudeping.model.ApprovalRequest
+import com.brightflare.claudeping.domain.model.ApprovalRequest
 
 /**
  * 승인 요청을 사용자에게 전달하는 채널 추상화.

@@ -1,6 +1,7 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.application.service
 
-import com.brightflare.claudeping.model.ApprovalRequest
+import com.brightflare.claudeping.application.port.ApprovalChannel
+import com.brightflare.claudeping.domain.model.ApprovalRequest
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 

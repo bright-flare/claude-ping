@@ -1,4 +1,4 @@
-package com.brightflare.claudeping.model
+package com.brightflare.claudeping.domain.model
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -30,13 +30,4 @@ enum class ApprovalStatus {
 data class ApprovalResponse(
     val approved: Boolean,
     val message: String? = null
-)
-
-/**
- * Hook으로부터 받는 요청 데이터
- */
-data class HookRequest(
-    val event: String,           // 이벤트 타입 (예: "ask_user")
-    val question: String,        // 질문 내용
-    val context: Map<String, Any>? = null  // 추가 컨텍스트
 )

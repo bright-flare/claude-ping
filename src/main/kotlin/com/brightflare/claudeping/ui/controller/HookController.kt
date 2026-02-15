@@ -1,9 +1,9 @@
-package com.brightflare.claudeping.controller
+package com.brightflare.claudeping.ui.controller
 
-import com.brightflare.claudeping.model.ApprovalRequest
-import com.brightflare.claudeping.model.HookRequest
-import com.brightflare.claudeping.service.ApprovalOrchestrator
-import com.brightflare.claudeping.service.ApprovalService
+import com.brightflare.claudeping.domain.model.ApprovalRequest
+import com.brightflare.claudeping.ui.dto.HookRequest
+import com.brightflare.claudeping.application.service.ApprovalOrchestrator
+import com.brightflare.claudeping.application.service.ApprovalService
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus

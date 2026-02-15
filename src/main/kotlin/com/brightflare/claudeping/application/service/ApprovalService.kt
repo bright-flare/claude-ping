@@ -1,8 +1,8 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.application.service
 
-import com.brightflare.claudeping.model.ApprovalRequest
-import com.brightflare.claudeping.model.ApprovalResponse
-import com.brightflare.claudeping.model.ApprovalStatus
+import com.brightflare.claudeping.domain.model.ApprovalRequest
+import com.brightflare.claudeping.domain.model.ApprovalResponse
+import com.brightflare.claudeping.domain.model.ApprovalStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging

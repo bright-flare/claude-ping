@@ -1,7 +1,7 @@
-package com.brightflare.claudeping.service
+package com.brightflare.claudeping.application.service
 
-import com.brightflare.claudeping.model.ApprovalRequest
-import com.brightflare.claudeping.model.ApprovalResponse
+import com.brightflare.claudeping.domain.model.ApprovalRequest
+import com.brightflare.claudeping.domain.model.ApprovalResponse
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import org.springframework.stereotype.Service
