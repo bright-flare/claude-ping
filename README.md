@@ -32,6 +32,8 @@ Claude Code → Hook Script → Spring Boot API → Telegram Bot
 
 ## 🚀 빠른 시작
 
+> 가장 빠른 설치/연결 가이드는 **[QUICKSTART.md](./QUICKSTART.md)** 를 먼저 따라와줘.
+
 ### 방법 1: 원라이너 설치 (권장)
 
 ```bash
@@ -163,6 +165,7 @@ Claude Code가 작업을 요청하면:
 
 ## 📖 상세 문서
 
+- [Quick Start (Docker + Telegram)](./QUICKSTART.md) - 실행/연결/테스트까지 한 번에
 - [설치 가이드](docs/SETUP_GUIDE.md) - 상세한 설치 방법
 - [Hook API 레퍼런스](docs/HOOK_API_REFERENCE.md) - Claude Code Hook 명세
 - [Hook 스크립트 비교](docs/HOOK_SCRIPT_COMPARISON.md) - 3가지 Hook 버전 비교

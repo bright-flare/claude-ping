@@ -1,234 +1,193 @@
-# ⚡ 빠른 시작 가이드
+# ⚡ ClaudePing Quick Start (Docker + Telegram)
 
-## 1️⃣ 텔레그램 봇 설정 (5분)
-
-### Step 1: 봇 생성
-1. 텔레그램 앱 열기
-2. [@BotFather](https://t.me/botfather) 검색
-3. `/newbot` 명령 실행
-4. 봇 이름 입력 (예: "My Claude Bot")
-5. 봇 username 입력 (예: "my_claude_bot")
-6. **봇 토큰 복사** (예: `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`)
-
-### Step 2: Chat ID 확인
-1. [@userinfobot](https://t.me/userinfobot) 검색
-2. 메시지 전송 (아무거나)
-3. **Chat ID 복사** (예: `123456789`)
-
-### Step 3: 봇 활성화
-1. 생성한 봇 찾기
-2. `/start` 명령 전송
+이 문서는 **처음 설치하는 사용자 기준**으로,
+- 텔레그램 봇 생성
+- Docker 실행
+- Claude Hook 연결
+- 승인/채팅 테스트
+까지 한 번에 끝내는 가이드입니다.
 
 ---
 
-## 2️⃣ 환경변수 설정 (2분)
+## 0) 준비물
 
-### macOS/Linux
+- Docker + Docker Compose
+- Claude Code 사용 환경
+- 텔레그램 앱
 
-터미널에서 실행:
-
-```bash
-# 환경변수 설정
-echo 'export TELEGRAM_BOT_TOKEN="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"' >> ~/.bashrc
-echo 'export TELEGRAM_CHAT_ID="123456789"' >> ~/.bashrc
-
-# zsh 사용자는 .zshrc
-echo 'export TELEGRAM_BOT_TOKEN="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"' >> ~/.zshrc
-echo 'export TELEGRAM_CHAT_ID="123456789"' >> ~/.zshrc
-
-# 적용
-source ~/.bashrc  # 또는 source ~/.zshrc
-```
-
-**⚠️ 주의**: 위의 토큰과 Chat ID를 본인의 것으로 교체하세요!
-
-### 확인
-
-```bash
-echo $TELEGRAM_BOT_TOKEN
-echo $TELEGRAM_CHAT_ID
-```
+> 포트 기본값: `8080`
 
 ---
 
-## 3️⃣ 프로젝트 빌드 & 실행 (3분)
+## 1) 텔레그램 봇 만들기 (약 3분)
 
-### IntelliJ IDEA 사용 (권장)
+### 1-1. BotFather에서 봇 생성
+1. 텔레그램에서 [@BotFather](https://t.me/BotFather) 열기
+2. `/newbot` 입력
+3. 봇 이름/username 설정
+4. 발급된 **BOT TOKEN** 복사
 
-1. **프로젝트 열기**
-   - IntelliJ IDEA 실행
-   - "Open" → `claudeping` 폴더 선택
-   - Gradle 자동 import 대기
+### 1-2. Chat ID 확인
+1. [@userinfobot](https://t.me/userinfobot) 열기
+2. 아무 메시지 전송
+3. 표시되는 **Chat ID** 복사
 
-2. **실행**
-   - `ClaudePingApplication.kt` 파일 열기
-   - 파일 왼쪽의 ▶️ 버튼 클릭
-   - 또는 `Shift + F10`
-
-3. **확인**
-   - 콘솔에 "Started ClaudePingApplication" 출력 확인
-   - `http://localhost:8080` 실행 중
-
-### 터미널 사용
-
-```bash
-# Gradle Wrapper 권한 부여 (최초 1회)
-chmod +x gradlew
-
-# 빌드 & 실행
-./gradlew bootRun
-```
-
-**⚠️ Gradle Wrapper가 없는 경우**:
-```bash
-# IntelliJ로 프로젝트를 한 번 열면 자동 생성됨
-# 또는 Gradle 설치 필요
-brew install gradle  # macOS
-gradle wrapper
-```
+### 1-3. 내 봇 활성화
+1. 방금 만든 봇 대화창 열기
+2. `/start` 전송 (필수)
 
 ---
 
-## 4️⃣ Claude Code Hook 설정 (2분)
-
-### Step 1: Hook 디렉토리 생성
+## 2) 프로젝트 실행 (Docker)
 
 ```bash
-mkdir -p ~/.claude/hooks
+git clone https://github.com/bright-flare/claude-ping.git
+cd claude-ping
 ```
 
-### Step 2: Hook 스크립트 링크
+### 2-1. 환경파일 생성
 
 ```bash
-# 프로젝트 경로를 본인의 경로로 수정
-ln -sf ~/Documents/git-repo/my-temp/hooks/ask-user-hook.sh \
-       ~/.claude/hooks/ask-user-hook.sh
+cp .env.example .env
 ```
 
-### Step 3: Claude 설정 파일 수정
+`.env`를 열어 최소 항목을 채워줘:
+
+```env
+TELEGRAM_BOT_TOKEN=여기에_봇_토큰
+TELEGRAM_CHAT_ID=여기에_내_chat_id
+TELEGRAM_CHAT_STRICT=true
+
+# 텔레그램 일반 채팅 메시지를 보낼 릴레이 엔드포인트
+CLAUDE_RELAY_URL=http://host.docker.internal:18789/api/chat
+# CLAUDE_RELAY_TOKEN=선택
+CLAUDE_RELAY_TIMEOUT_SECONDS=90
+```
+
+> `CLAUDE_RELAY_URL`은 네 환경의 실제 Claude/LLM 백엔드 주소로 바꿔야 해.
+
+### 2-2. 컨테이너 실행
 
 ```bash
-# 설정 파일이 없으면 생성
-mkdir -p ~/.claude
-touch ~/.claude/settings.json
+docker compose up -d --build
 ```
 
-`~/.claude/settings.json` 파일 내용:
-
-```json
-{
-  "hooks": {
-    "user-prompt-submit": "/Users/본인계정/.claude/hooks/ask-user-hook.sh"
-  }
-}
-```
-
-**⚠️ 주의**: 경로를 본인의 홈 디렉토리로 수정하세요!
-
----
-
-## 5️⃣ 테스트 (2분)
-
-### 1. 서버 상태 확인
+### 2-3. 헬스체크
 
 ```bash
 curl http://localhost:8080/api/hook/health
 ```
 
-**예상 출력**:
+예상 응답:
+
 ```json
 {"status":"UP","service":"claudeping"}
 ```
 
-### 2. 수동 테스트
+---
+
+## 3) Claude Code Hook 연결
+
+### 3-1. Hook 링크
+
+```bash
+mkdir -p ~/.claude/hooks
+ln -sf "$(pwd)/hooks/permission-request-hook-simple.sh" ~/.claude/hooks/claudeping-hook
+chmod +x ~/.claude/hooks/claudeping-hook
+```
+
+### 3-2. Claude 설정
+
+`~/.claude/settings.json`에 아래를 추가(없으면 생성):
+
+```json
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claudeping-hook",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 4) 텔레그램 연결 테스트
+
+### 4-1. 봇 명령 테스트
+텔레그램에서 봇에게:
+- `/start`
+- `/help`
+- `/health`
+
+정상 응답이 오면 연결 OK.
+
+### 4-2. 승인 버튼 테스트
+아래 API 호출:
 
 ```bash
 curl -X POST http://localhost:8080/api/hook/ask \
   -H "Content-Type: application/json" \
   -d '{
-    "event": "ask_user",
-    "question": "테스트 질문입니다. 승인하시겠습니까?",
-    "context": {}
+    "event": "permission_request",
+    "question": "테스트 승인 요청입니다. 진행할까요?",
+    "context": {"source":"quickstart"}
   }'
 ```
 
-**결과**:
-1. 텔레그램에서 알림 수신
-2. 버튼 클릭 (승인 또는 거부)
-3. 터미널에 응답 출력
+텔레그램에 ✅/❌ 버튼이 오고, 누르면 API 호출이 응답으로 종료되면 정상.
 
-### 3. Claude Code와 함께 테스트
-
-Claude Code를 실행하고 작업을 수행하면, 승인이 필요한 경우 자동으로 텔레그램 알림이 전송됩니다!
+### 4-3. 일반 채팅 릴레이 테스트
+텔레그램에서 봇에게 일반 메시지(예: `안녕`) 전송.
+- 설정한 `CLAUDE_RELAY_URL`이 정상이면 답장 수신
+- 미설정/오류면 안내 메시지 반환
 
 ---
 
-## 🎉 완료!
+## 5) 운영 기본 명령
 
-이제 Claude Code가 질문할 때마다 텔레그램으로 알림을 받고, 버튼 클릭으로 즉시 응답할 수 있습니다.
-
----
-
-## 📱 사용 예시
-
-```
-📱 텔레그램:
-━━━━━━━━━━━━━━━━━━━━
-🤖 Claude 승인 요청
-
-📝 질문:
-파일을 수정하시겠습니까?
-
-⏰ 시간: 2024-02-08T10:30:00
-
-응답을 선택해주세요:
-
-[✅ 승인]  [❌ 거부]
-━━━━━━━━━━━━━━━━━━━━
-```
-
-버튼을 누르면:
-- Claude Code가 즉시 계속 진행
-- 텔레그램 메시지가 "✅ 응답 완료"로 업데이트
-
----
-
-## 🔧 문제 해결
-
-### 텔레그램 알림이 안 옴
 ```bash
-# 환경변수 확인
-echo $TELEGRAM_BOT_TOKEN
-echo $TELEGRAM_CHAT_ID
+# 로그 보기
+docker compose logs -f claudeping
 
-# 봇에게 /start 메시지 전송했는지 확인
-```
+# 재시작
+docker compose restart claudeping
 
-### Hook이 실행 안 됨
-```bash
-# 실행 권한 확인
-chmod +x ~/.claude/hooks/ask-user-hook.sh
-
-# 로그 확인
-tail -f ~/.claude/claudeping.log
-```
-
-### 서버 연결 실패
-```bash
-# 서버 실행 중인지 확인
-curl http://localhost:8080/api/hook/health
-
-# 포트 충돌 확인
-lsof -i :8080
+# 중지
+docker compose down
 ```
 
 ---
 
-## 📚 더 보기
+## 6) 자주 막히는 지점
 
-- [README.md](README.md) - 전체 문서
-- [문제 신고](https://github.com/your-repo/issues)
+1. **봇이 아무 응답이 없음**
+   - BotFather 토큰 오타
+   - 봇에 `/start` 안 보냄
+
+2. **승인 요청이 텔레그램으로 안 옴**
+   - `TELEGRAM_CHAT_ID` 불일치
+   - `TELEGRAM_CHAT_STRICT=true` 상태에서 다른 채팅에서 테스트
+
+3. **일반 채팅 답장이 안 옴**
+   - `CLAUDE_RELAY_URL` 미설정 또는 접근 불가
+   - 릴레이 응답 포맷이 `reply/message/text`를 반환하지 않음
 
 ---
 
-**즐거운 코딩 되세요! 🚀**
+## 7) 다음 단계
+
+- 상세 문서: `README.md`
+- Docker 심화: `docs/DOCKER_GUIDE.md`
+- Hook 상세: `docs/HOOK_API_REFERENCE.md`
+
+행복한 원격 승인/채팅 자동화 되길 🔥
