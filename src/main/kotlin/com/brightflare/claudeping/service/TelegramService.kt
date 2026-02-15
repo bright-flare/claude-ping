@@ -28,8 +28,10 @@ class TelegramService(
     @Value("\${telegram.chat.id}") private val defaultChatId: Long,
     @Value("\${telegram.chat.strict:true}") private val strictChatId: Boolean,
     private val approvalService: ApprovalService,
-    private val chatRelayService: ChatRelayService
-) : TelegramLongPollingBot(botToken) {
+    private val conversationService: BotConversationService
+) : TelegramLongPollingBot(botToken), ApprovalChannel {
+
+    override val name: String = "telegram"
 
     override fun getBotUsername(): String = botUsername
 
@@ -103,55 +105,24 @@ class TelegramService(
             return
         }
 
-        when (text) {
-            "/start" -> {
-                sendMessageToChat(
-                    chatId,
-                    """
-                    🔥 ClaudePing 봇이 연결됐어.
-                    이제 일반 메시지를 보내면 Claude 릴레이로 전달할게.
+        val reply = conversationService.handleMessage(
+            IncomingMessageContext(
+                platform = name,
+                chatId = chatId,
+                text = text,
+                username = from?.userName,
+                firstName = from?.firstName,
+                lastName = from?.lastName
+            )
+        )
 
-                    명령어:
-                    /help - 도움말
-                    /health - 연결 상태 확인
-                """.trimIndent()
-                )
-            }
-
-            "/help" -> {
-                sendMessageToChat(
-                    chatId,
-                    """
-                    사용 방법:
-                    1) Claude Hook 승인 요청은 버튼(✅/❌)으로 처리
-                    2) 일반 텍스트는 Claude 릴레이로 전달
-
-                    필수 설정:
-                    - CLAUDE_RELAY_URL
-                    - (선택) CLAUDE_RELAY_TOKEN
-                """.trimIndent()
-                )
-            }
-
-            "/health" -> sendMessageToChat(chatId, "✅ bot alive")
-
-            else -> {
-                val reply = chatRelayService.sendUserMessage(
-                    chatId = chatId,
-                    text = text,
-                    username = from?.userName,
-                    firstName = from?.firstName,
-                    lastName = from?.lastName
-                )
-                sendMessageToChat(chatId, reply)
-            }
-        }
+        sendMessageToChat(chatId, reply)
     }
 
     /**
      * 승인 요청을 텔레그램으로 전송
      */
-    fun sendApprovalRequest(request: ApprovalRequest) {
+    override fun sendApprovalRequest(request: ApprovalRequest) {
         val keyboard = InlineKeyboardMarkup.builder()
             .keyboardRow(
                 listOf(

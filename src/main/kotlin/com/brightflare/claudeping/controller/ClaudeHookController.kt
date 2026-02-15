@@ -1,11 +1,9 @@
 package com.brightflare.claudeping.controller
 
 import com.brightflare.claudeping.model.ApprovalRequest
-import com.brightflare.claudeping.service.ApprovalService
-import com.brightflare.claudeping.service.TelegramService
+import com.brightflare.claudeping.service.ApprovalOrchestrator
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -18,8 +16,7 @@ private val logger = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/api/claude-hook")
 class ClaudeHookController(
-    private val approvalService: ApprovalService,
-    private val telegramService: TelegramService
+    private val approvalOrchestrator: ApprovalOrchestrator
 ) {
 
     /**
@@ -48,11 +45,7 @@ class ClaudeHookController(
 
             // 블로킹으로 응답 대기
             val response = runBlocking {
-                // 텔레그램으로 알림 전송
-                telegramService.sendApprovalRequest(approvalRequest)
-
-                // 사용자 응답 대기
-                approvalService.createAndWaitForApproval(approvalRequest)
+                approvalOrchestrator.requestApproval(approvalRequest)
             }
 
             // Claude Hook 형식으로 응답
