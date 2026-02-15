@@ -12,6 +12,13 @@ telegram:
     username: ${TELEGRAM_BOT_USERNAME:YOUR_BOT_USERNAME_HERE}
   chat:
     id: ${TELEGRAM_CHAT_ID:0}  # 본인의 텔레그램 Chat ID
+    strict: ${TELEGRAM_CHAT_STRICT:true} # 지정 chat id만 허용
+
+bridge:
+  relay:
+    url: ${CLAUDE_RELAY_URL:}           # 텔레그램 메시지를 전달할 Claude/LLM 엔드포인트
+    token: ${CLAUDE_RELAY_TOKEN:}       # 선택: Bearer 토큰
+    timeout-seconds: ${CLAUDE_RELAY_TIMEOUT_SECONDS:90}
 
 # 승인 요청 타임아웃 (초)
 approval:
@@ -21,4 +28,4 @@ approval:
 logging:
   level:
     root: INFO
-    com.example.claudebridge: DEBUG
+    com.brightflare.claudeping: DEBUG

@@ -11,6 +11,10 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - TELEGRAM_CHAT_STRICT=${TELEGRAM_CHAT_STRICT:-true}
+      - CLAUDE_RELAY_URL=${CLAUDE_RELAY_URL}
+      - CLAUDE_RELAY_TOKEN=${CLAUDE_RELAY_TOKEN:-}
+      - CLAUDE_RELAY_TIMEOUT_SECONDS=${CLAUDE_RELAY_TIMEOUT_SECONDS:-90}
     env_file:
       - .env
     restart: unless-stopped

@@ -9,6 +9,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
@@ -17,59 +18,133 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * 텔레그램 봇 서비스
+ * - 승인/거부 콜백 처리
+ * - 일반 텍스트 메시지 채팅 릴레이 처리
  */
 @Component
 class TelegramService(
     @Value("\${telegram.bot.token}") botToken: String,
     @Value("\${telegram.bot.username}") private val botUsername: String,
-    @Value("\${telegram.chat.id}") private val chatId: Long,
-    private val approvalService: ApprovalService
+    @Value("\${telegram.chat.id}") private val defaultChatId: Long,
+    @Value("\${telegram.chat.strict:true}") private val strictChatId: Boolean,
+    private val approvalService: ApprovalService,
+    private val chatRelayService: ChatRelayService
 ) : TelegramLongPollingBot(botToken) {
 
     override fun getBotUsername(): String = botUsername
 
     override fun onUpdateReceived(update: Update) {
-        if (!update.hasCallbackQuery()) return
+        when {
+            update.hasCallbackQuery() -> handleCallback(update)
+            update.hasMessage() && update.message.hasText() -> handleTextMessage(update.message)
+        }
+    }
 
+    private fun handleCallback(update: Update) {
         val callbackQuery = update.callbackQuery
         val data = callbackQuery.data
         val callbackMessage = callbackQuery.message
         val messageId = callbackMessage.messageId
-        val originalText = (callbackMessage as? org.telegram.telegrambots.meta.api.objects.Message)?.text ?: ""
+        val chatId = callbackMessage.chatId
+        val originalText = (callbackMessage as? Message)?.text ?: ""
 
         logger.info { "Received callback: $data" }
 
         // 콜백 데이터 파싱: "approve:request-id" or "reject:request-id"
         val parts = data.split(":")
-        if (parts.size == 2) {
-            val action = parts[0]
-            val requestId = parts[1]
+        if (parts.size != 2) return
 
-            val approved = action == "approve"
-            val response = ApprovalResponse(
-                approved = approved,
-                message = if (approved) "승인되었습니다" else "거부되었습니다"
-            )
+        val action = parts[0]
+        val requestId = parts[1]
 
-            approvalService.respondToRequest(requestId, response)
+        val approved = action == "approve"
+        val response = ApprovalResponse(
+            approved = approved,
+            message = if (approved) "승인되었습니다" else "거부되었습니다"
+        )
 
-            // 메시지 업데이트
-            execute(EditMessageText.builder()
+        approvalService.respondToRequest(requestId, response)
+
+        // 메시지 업데이트
+        execute(
+            EditMessageText.builder()
                 .chatId(chatId.toString())
                 .messageId(messageId)
-                .text("""
+                .text(
+                    """
                     ✅ 응답 완료
 
                     $originalText
 
                     👉 결과: ${if (approved) "승인" else "거부"}
-                """.trimIndent())
-                .build())
+                """.trimIndent()
+                )
+                .build()
+        )
 
-            execute(AnswerCallbackQuery.builder()
+        execute(
+            AnswerCallbackQuery.builder()
                 .callbackQueryId(callbackQuery.id)
                 .text(if (approved) "✅ 승인되었습니다" else "❌ 거부되었습니다")
-                .build())
+                .build()
+        )
+    }
+
+    private fun handleTextMessage(message: Message) {
+        val chatId = message.chatId
+        val text = message.text?.trim().orEmpty()
+        val from = message.from
+
+        if (text.isBlank()) return
+
+        if (strictChatId && defaultChatId > 0 && chatId != defaultChatId) {
+            logger.warn { "Rejected message from unauthorized chatId=$chatId" }
+            sendMessageToChat(chatId, "이 봇은 허용된 Chat ID에서만 동작해요.")
+            return
+        }
+
+        when (text) {
+            "/start" -> {
+                sendMessageToChat(
+                    chatId,
+                    """
+                    🔥 ClaudePing 봇이 연결됐어.
+                    이제 일반 메시지를 보내면 Claude 릴레이로 전달할게.
+
+                    명령어:
+                    /help - 도움말
+                    /health - 연결 상태 확인
+                """.trimIndent()
+                )
+            }
+
+            "/help" -> {
+                sendMessageToChat(
+                    chatId,
+                    """
+                    사용 방법:
+                    1) Claude Hook 승인 요청은 버튼(✅/❌)으로 처리
+                    2) 일반 텍스트는 Claude 릴레이로 전달
+
+                    필수 설정:
+                    - CLAUDE_RELAY_URL
+                    - (선택) CLAUDE_RELAY_TOKEN
+                """.trimIndent()
+                )
+            }
+
+            "/health" -> sendMessageToChat(chatId, "✅ bot alive")
+
+            else -> {
+                val reply = chatRelayService.sendUserMessage(
+                    chatId = chatId,
+                    text = text,
+                    username = from?.userName,
+                    firstName = from?.firstName,
+                    lastName = from?.lastName
+                )
+                sendMessageToChat(chatId, reply)
+            }
         }
     }
 
@@ -78,16 +153,18 @@ class TelegramService(
      */
     fun sendApprovalRequest(request: ApprovalRequest) {
         val keyboard = InlineKeyboardMarkup.builder()
-            .keyboardRow(listOf(
-                InlineKeyboardButton.builder()
-                    .text("✅ 승인")
-                    .callbackData("approve:${request.id}")
-                    .build(),
-                InlineKeyboardButton.builder()
-                    .text("❌ 거부")
-                    .callbackData("reject:${request.id}")
-                    .build()
-            ))
+            .keyboardRow(
+                listOf(
+                    InlineKeyboardButton.builder()
+                        .text("✅ 승인")
+                        .callbackData("approve:${request.id}")
+                        .build(),
+                    InlineKeyboardButton.builder()
+                        .text("❌ 거부")
+                        .callbackData("reject:${request.id}")
+                        .build()
+                )
+            )
             .build()
 
         val message = """
@@ -102,20 +179,28 @@ class TelegramService(
             응답을 선택해주세요:
         """.trimIndent()
 
-        execute(SendMessage.builder()
-            .chatId(chatId.toString())
-            .text(message)
-            .replyMarkup(keyboard)
-            .build())
+        execute(
+            SendMessage.builder()
+                .chatId(defaultChatId.toString())
+                .text(message)
+                .replyMarkup(keyboard)
+                .build()
+        )
     }
 
     /**
-     * 일반 메시지 전송
+     * 기본 chatId로 일반 메시지 전송
      */
     fun sendMessage(message: String) {
-        execute(SendMessage.builder()
-            .chatId(chatId.toString())
-            .text(message)
-            .build())
+        sendMessageToChat(defaultChatId, message)
+    }
+
+    private fun sendMessageToChat(chatId: Long, message: String) {
+        execute(
+            SendMessage.builder()
+                .chatId(chatId.toString())
+                .text(message)
+                .build()
+        )
     }
 }

@@ -6,6 +6,7 @@ Claude Code의 권한 요청을 텔레그램으로 받아서 응답할 수 있�
 
 - 🤖 **Claude Code 통합**: PermissionRequest Hook을 통한 완벽한 통합
 - 📱 **텔레그램 알림**: 실시간 알림과 버튼으로 간편한 응답
+- 💬 **텔레그램 채팅 릴레이**: 일반 메시지를 Claude/LLM 백엔드로 전달하고 답장 수신
 - 🚀 **간편한 설치**: 원라이너 스크립트 또는 자동 설치
 - 🐳 **Docker 지원**: 컨테이너 기반 배포 옵션
 - 🔧 **유연한 설정**: 3가지 Hook 스크립트 옵션 (Simple/Python/Bash)
@@ -34,7 +35,7 @@ Claude Code → Hook Script → Spring Boot API → Telegram Bot
 ### 방법 1: 원라이너 설치 (권장)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/brightflare/claudeping/main/quick-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bright-flare/claude-ping/main/quick-install.sh | bash
 ```
 
 ### 방법 2: 자동 설치
@@ -55,6 +56,8 @@ cd claudeping
 cat > .env << EOF
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
+CLAUDE_RELAY_URL=http://host.docker.internal:18789/api/chat
+# CLAUDE_RELAY_TOKEN=optional_bearer_token
 EOF
 
 # 2. Docker Compose 실행
@@ -138,13 +141,25 @@ claude
 > 현재 디렉토리의 파일 목록을 보여줘
 ```
 
-### 3. 텔레그램에서 응답
+### 3. 텔레그램에서 승인 + 채팅
 
+#### 승인 요청 처리
 Claude Code가 작업을 요청하면:
 1. 텔레그램으로 알림 수신
 2. 질문 내용 확인
 3. **✅ 승인** 또는 **❌ 거부** 버튼 클릭
 4. Claude가 선택에 따라 작업 수행
+
+#### 일반 채팅 처리
+텔레그램에서 봇에게 일반 메시지를 보내면:
+1. 메시지를 `CLAUDE_RELAY_URL`로 전달
+2. 백엔드 응답(reply/message/text)을 파싱
+3. 텔레그램으로 답장 전송
+
+사용 가능한 명령어:
+- `/start` - 봇 연결 안내
+- `/help` - 설정 도움말
+- `/health` - 봇 상태 확인
 
 ## 📖 상세 문서
 
