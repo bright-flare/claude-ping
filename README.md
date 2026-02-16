@@ -15,7 +15,7 @@ Claude Code의 권한 요청을 텔레그램으로 받아서 응답할 수 있�
 
 ```
 Claude Code → Hook Script → Spring Boot API → Telegram Bot
-                 ↑              ↓
+                 ↑                 ↓
                  └──── 응답 대기 ────┘
 ```
 
